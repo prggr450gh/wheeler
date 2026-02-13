@@ -1,2 +1,43 @@
 .claude
-./data/.
+
+# Local data files
+data/
+
+# Local env/secret files
+.env
+.env.*
+
+# Build artifacts
+bin/
+dist/
+tmp/
+coverage/
+
+# Logs
+*.log
+
+# Editor/OS
+.vscode/
+.idea/
+.DS_Store
+
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out
+
+# Dependency directories (remove the comment below to include it)
+# vendor/
+
+# Go workspace file
+go.work
+
+# End of https://www.toptal.com/developers/gitignore/api/go
