@@ -139,6 +139,8 @@ type MonthlyData struct {
 	TableMonthLabels         []string                      `json:"tableMonthLabels"` // Formatted labels ("2025 Jan", etc.)
 	TableTotalsByMonth       map[string]float64            `json:"tableTotalsByMonth"` // yyyy-mm -> total for table
 	TotalsByMonth            []MonthlyTotal                `json:"totalsByMonth"` // Jan-Dec for charts
+	CollateralByMonth        []MonthlyChartData            `json:"collateralByMonth"` // max collateral per month
+	APRByMonth               []MonthlyChartData            `json:"aprByMonth"`        // annualized APR per month
 	MonthlyPremiumsBySymbol  []MonthlyPremiumsBySymbol     `json:"monthlyPremiumsBySymbol"`
 	OptionsIndex             map[string]interface{}        `json:"options_index"`
 	OptionsIndexJSON         template.JS                   `json:"-"` // JSON-encoded for template

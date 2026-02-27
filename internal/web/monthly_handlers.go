@@ -60,6 +60,97 @@ func (s *Server) monthlyHandler(w http.ResponseWriter, r *http.Request) {
 	s.renderTemplate(w, "monthly.html", data)
 }
 
+// calculateMaxCollateral finds the peak simultaneous collateral during a given month.
+// Collateral = Put collateral (Strike × Contracts × 100) + Long position cost basis (BuyPrice × Shares).
+func calculateMaxCollateral(ym string, options []*models.Option, positions []*models.LongPosition) float64 {
+	var year, month int
+	fmt.Sscanf(ym, "%04d-%02d", &year, &month)
+	startDate := time.Date(year, time.Month(month), 1, 0, 0, 0, 0, time.UTC)
+	endDate := startDate.AddDate(0, 1, 0) // exclusive: first of next month
+
+	type Event struct {
+		date  time.Time
+		delta float64
+	}
+	var events []Event
+	var initialCollateral float64
+
+	// Put options: collateral = Strike × Contracts × 100
+	for _, opt := range options {
+		if opt.Type != "Put" {
+			continue
+		}
+		putStillActive := opt.Closed == nil
+		var closeDate time.Time
+		if !putStillActive {
+			closeDate = *opt.Closed
+		}
+
+		// Skip if doesn't overlap with this month
+		if !opt.Opened.Before(endDate) {
+			continue
+		}
+		if !putStillActive && closeDate.Before(startDate) {
+			continue
+		}
+
+		collateral := opt.Strike * float64(opt.Contracts) * 100
+		if opt.Opened.Before(startDate) {
+			initialCollateral += collateral
+			// Closes during the month
+			if !putStillActive && closeDate.Before(endDate) {
+				events = append(events, Event{closeDate, -collateral})
+			}
+		} else {
+			// Opens during the month
+			events = append(events, Event{opt.Opened, +collateral})
+			if !putStillActive && closeDate.Before(endDate) {
+				events = append(events, Event{closeDate, -collateral})
+			}
+		}
+	}
+
+	// Long positions: collateral = BuyPrice × Shares
+	for _, pos := range positions {
+		posStillActive := pos.Closed == nil
+		var closeDate time.Time
+		if !posStillActive {
+			closeDate = *pos.Closed
+		}
+
+		if !pos.Opened.Before(endDate) {
+			continue
+		}
+		if !posStillActive && closeDate.Before(startDate) {
+			continue
+		}
+
+		costBasis := pos.BuyPrice * float64(pos.Shares)
+		if pos.Opened.Before(startDate) {
+			initialCollateral += costBasis
+			if !posStillActive && closeDate.Before(endDate) {
+				events = append(events, Event{closeDate, -costBasis})
+			}
+		} else {
+			events = append(events, Event{pos.Opened, +costBasis})
+			if !posStillActive && closeDate.Before(endDate) {
+				events = append(events, Event{closeDate, -costBasis})
+			}
+		}
+	}
+
+	sort.Slice(events, func(i, j int) bool { return events[i].date.Before(events[j].date) })
+	current := initialCollateral
+	maxCollateral := initialCollateral
+	for _, e := range events {
+		current += e.delta
+		if current > maxCollateral {
+			maxCollateral = current
+		}
+	}
+	return maxCollateral
+}
+
 // buildMonthlyData creates comprehensive monthly financial data based on transaction dates
 func (s *Server) buildMonthlyData(symbols []string, options []*models.Option, dividends []*models.Dividend, longPositions []*models.LongPosition, optionsIndex map[string]interface{}, fromMonth, toMonth string) MonthlyData {
 	// Initialize data structures - use YYYY-MM keys instead of month indexes
@@ -320,6 +411,20 @@ func (s *Server) buildMonthlyData(symbols []string, options []*models.Option, di
 		}
 	}
 
+	// Build collateral and APR chart data
+	collateralByMonth := make([]MonthlyChartData, len(yearMonths))
+	aprByMonth := make([]MonthlyChartData, len(yearMonths))
+	for i, ym := range yearMonths {
+		maxCollateral := calculateMaxCollateral(ym, options, longPositions)
+		optionsPremium := putsByYearMonth[ym] + callsByYearMonth[ym]
+		var apr float64
+		if maxCollateral > 0 {
+			apr = (optionsPremium / maxCollateral) * 12 * 100
+		}
+		collateralByMonth[i] = MonthlyChartData{Month: ym, Amount: maxCollateral}
+		aprByMonth[i] = MonthlyChartData{Month: ym, Amount: apr}
+	}
+
 	// MonthlyPremiumsBySymbol is deprecated - frontend uses OptionsIndex instead
 	monthlyPremiumsBySymbol := []MonthlyPremiumsBySymbol{}
 	
@@ -354,6 +459,8 @@ func (s *Server) buildMonthlyData(symbols []string, options []*models.Option, di
 		TableMonthLabels:        formattedLabels,
 		TableTotalsByMonth:      totalsByYearMonth,
 		TotalsByMonth:           totalsByMonth,
+		CollateralByMonth:       collateralByMonth,
+		APRByMonth:              aprByMonth,
 		MonthlyPremiumsBySymbol: monthlyPremiumsBySymbol,
 		OptionsIndex:            optionsIndex,
 		OptionsIndexJSON:        template.JS(string(indexJSON)),

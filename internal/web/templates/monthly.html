@@ -131,6 +131,18 @@
                 </div>
             </div>
             
+            <!-- Collateral & APR Chart -->
+            <div class="content-section" style="margin-bottom: 30px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <div class="section-title">Collateral &amp; APR</div>
+                </div>
+                <div style="background: #2d2d2d; padding: 15px; border-radius: 8px; border: 1px solid #404040;">
+                    <div style="height: 300px;">
+                        <canvas id="collateralAPRChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
             <!-- All Charts with Legend -->
             <div style="display: flex; gap: 20px; margin-bottom: 30px;">
                 <!-- Left: All Charts (90% width) -->
@@ -2344,10 +2356,82 @@
                 }
                 
                 $overlay.on('click', closePicker);
-                
+
                 $('body').append($overlay, $pickerWrapper);
                 updateSelection();
             });
+        });
+
+        // Collateral & APR Chart
+        const collateralData = [{{range $i, $d := .CollateralByMonth}}{{if $i}},{{end}}{{$d.Amount}}{{end}}];
+        const aprData = [{{range $i, $d := .APRByMonth}}{{if $i}},{{end}}{{$d.Amount}}{{end}}];
+
+        const collateralCtx = document.getElementById('collateralAPRChart').getContext('2d');
+        new Chart(collateralCtx, {
+            type: 'bar',
+            data: {
+                labels: currentMonthLabels,
+                datasets: [{
+                    type: 'line',
+                    label: 'Annualized APR (%)',
+                    data: aprData,
+                    borderColor: '#FFD700',
+                    backgroundColor: 'rgba(255, 215, 0, 0.1)',
+                    borderWidth: 3,
+                    fill: false,
+                    tension: 0.2,
+                    yAxisID: 'y1',
+                    order: 1
+                }, {
+                    type: 'bar',
+                    label: 'Max Collateral ($)',
+                    data: collateralData,
+                    backgroundColor: 'rgba(52, 152, 219, 0.6)',
+                    borderColor: '#3498db',
+                    borderWidth: 1,
+                    yAxisID: 'y',
+                    order: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { labels: { color: '#e0e0e0' } },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                if (context.dataset.yAxisID === 'y1') {
+                                    return context.dataset.label + ': ' + context.parsed.y.toFixed(1) + '%';
+                                }
+                                return context.dataset.label + ': $' + context.parsed.y.toLocaleString('en-US', {maximumFractionDigits: 0});
+                            }
+                        }
+                    },
+                    datalabels: { display: false }
+                },
+                scales: {
+                    x: { ticks: { color: '#a0a0a0' }, grid: { color: '#404040' } },
+                    y: {
+                        type: 'linear',
+                        position: 'left',
+                        ticks: {
+                            color: '#a0a0a0',
+                            callback: val => '$' + val.toLocaleString('en-US', {maximumFractionDigits: 0})
+                        },
+                        grid: { color: '#404040' }
+                    },
+                    y1: {
+                        type: 'linear',
+                        position: 'right',
+                        ticks: {
+                            color: '#FFD700',
+                            callback: val => val.toFixed(1) + '%'
+                        },
+                        grid: { drawOnChartArea: false }
+                    }
+                }
+            }
         });
     </script>
     <script src="/static/js/navigation.js"></script>

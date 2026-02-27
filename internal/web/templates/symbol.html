@@ -529,6 +529,11 @@
             </div>
             <form id="optionForm">
                 <div class="form-group">
+                    <label for="optionQuickSymbolInput" class="form-label">Paste Option Symbol</label>
+                    <input type="text" id="optionQuickSymbolInput" class="form-input" placeholder="e.g. AMD260320P190" autocomplete="off" spellcheck="false">
+                    <span class="form-hint">Paste a compact option symbol to auto-fill fields below</span>
+                </div>
+                <div class="form-group">
                     <label for="optionSymbolInput" class="form-label">Symbol</label>
                     <input type="text" id="optionSymbolInput" class="form-input" readonly>
                 </div>
@@ -547,7 +552,7 @@
                     </div>
                     <div class="form-group">
                         <label for="optionStrikeInput" class="form-label">Strike Price *</label>
-                        <input type="number" id="optionStrikeInput" class="form-input" step="0.01" required>
+                        <input type="text" inputmode="decimal" id="optionStrikeInput" class="form-input" required>
                     </div>
                 </div>
                 <div class="form-row">
@@ -557,7 +562,7 @@
                     </div>
                     <div class="form-group">
                         <label for="optionPremiumInput" class="form-label">Premium *</label>
-                        <input type="number" id="optionPremiumInput" class="form-input" step="0.01" required>
+                        <input type="text" inputmode="decimal" id="optionPremiumInput" class="form-input" required>
                     </div>
                 </div>
                 <div class="form-row">
@@ -567,7 +572,7 @@
                     </div>
                     <div class="form-group">
                         <label for="optionCommissionInput" class="form-label">Commission</label>
-                        <input type="number" id="optionCommissionInput" class="form-input" step="0.01" value="0.00">
+                        <input type="text" inputmode="decimal" id="optionCommissionInput" class="form-input" value="0.00">
                     </div>
                 </div>
                 <div class="form-row">
@@ -577,7 +582,7 @@
                     </div>
                     <div class="form-group">
                         <label for="optionExitPriceInput" class="form-label">Exit Price</label>
-                        <input type="number" id="optionExitPriceInput" class="form-input" step="0.0001">
+                        <input type="text" inputmode="decimal" id="optionExitPriceInput" class="form-input">
                     </div>
                 </div>
                 <div class="form-buttons">
@@ -1444,6 +1449,41 @@
             originalOptionData = null;
         }
         
+        // Strip dollar signs from currency inputs as user types/pastes
+        ['optionStrikeInput', 'optionPremiumInput', 'optionCommissionInput', 'optionExitPriceInput'].forEach(function(id) {
+            document.getElementById(id).addEventListener('input', function() {
+                const pos = this.selectionStart;
+                const hadDollar = this.value.includes('$');
+                this.value = this.value.replace(/\$/g, '');
+                if (hadDollar) this.setSelectionRange(pos - 1, pos - 1);
+            });
+        });
+
+        // Parse compact option symbol string (e.g. "AMD260320P190" or "-AMD260320P190")
+        function parseOptionSymbol(input) {
+            const str = input.replace(/^-/, '').trim().toUpperCase();
+            // Format: SYMBOL(letters) + YYMMDD(6 digits) + P/C + STRIKE(digits, optional decimal)
+            const match = str.match(/^([A-Z]+)(\d{2})(\d{2})(\d{2})([PC])(\d+(?:\.\d+)?)$/);
+            if (!match) return null;
+            const [, symbol, yy, mm, dd, typeChar, strikeStr] = match;
+            return {
+                symbol: symbol,
+                expiration: `20${yy}-${mm}-${dd}`,
+                type: typeChar === 'P' ? 'Put' : 'Call',
+                strike: strikeStr
+            };
+        }
+
+        document.getElementById('optionQuickSymbolInput').addEventListener('input', function() {
+            const parsed = parseOptionSymbol(this.value);
+            if (!parsed) return;
+            document.getElementById('optionTypeInput').value = parsed.type;
+            document.getElementById('optionExpirationInput').value = parsed.expiration;
+            document.getElementById('optionStrikeInput').value = parsed.strike;
+            this.value = '';
+            document.getElementById('optionPremiumInput').focus();
+        });
+
         // Handle option form submission
         optionForm.addEventListener('submit', function(e) {
             e.preventDefault();

@@ -1272,6 +1272,13 @@ tbody tr:hover {
     border-color: var(--accent-blue-light);
 }
 
+.form-hint {
+    display: block;
+    margin-top: 4px;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+}
+
 /* Lighten calendar icons for date inputs */
 .form-input[type="date"]::-webkit-calendar-picker-indicator {
     opacity: 0.5;
