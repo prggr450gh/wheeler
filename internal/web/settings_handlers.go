@@ -18,6 +18,39 @@ type SettingsData struct {
 	ActivePage string            `json:"activePage"`
 }
 
+// SchwabData holds data for the Schwab settings template
+type SchwabData struct {
+	AllSymbols []string `json:"allSymbols"`
+	CurrentDB  string   `json:"currentDB"`
+	AppKey     string   `json:"appKey"`
+	SecretKey  string   `json:"secretKey"`
+	ActivePage string   `json:"activePage"`
+}
+
+// schwabHandler serves the Schwab API settings page
+func (s *Server) schwabHandler(w http.ResponseWriter, r *http.Request) {
+	log.Printf("[SCHWAB] Handling Schwab settings page request")
+
+	symbols, err := s.symbolService.GetDistinctSymbols()
+	if err != nil {
+		log.Printf("[SCHWAB] Error getting symbols: %v", err)
+		symbols = []string{}
+	}
+
+	appKey := s.settingService.GetValue("SCHWAB_APP_KEY")
+	secretKey := s.settingService.GetValue("SCHWAB_SECRET_KEY")
+
+	data := SchwabData{
+		AllSymbols: symbols,
+		CurrentDB:  s.getCurrentDatabaseName(),
+		AppKey:     appKey,
+		SecretKey:  secretKey,
+		ActivePage: "schwab",
+	}
+
+	s.renderTemplate(w, "schwab.html", data)
+}
+
 // settingsHandler serves the settings management page
 func (s *Server) settingsHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf("[SETTINGS] Handling settings page request")
@@ -176,14 +209,10 @@ func (s *Server) updateSettingAPI(w http.ResponseWriter, r *http.Request, name s
 		return
 	}
 
-	// Update the setting
-	setting, err := s.settingService.Update(name, req.Value, req.Description)
+	// Upsert the setting (create if it doesn't exist, update if it does)
+	setting, err := s.settingService.Upsert(name, req.Value, req.Description)
 	if err != nil {
-		if strings.Contains(err.Error(), "not found") {
-			http.Error(w, "Setting not found", http.StatusNotFound)
-			return
-		}
-		log.Printf("[SETTINGS API] Error updating setting %s: %v", name, err)
+		log.Printf("[SETTINGS API] Error upserting setting %s: %v", name, err)
 		http.Error(w, "Failed to update setting", http.StatusInternalServerError)
 		return
 	}

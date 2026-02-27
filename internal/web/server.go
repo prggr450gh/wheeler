@@ -419,6 +419,9 @@ http.HandleFunc("/symbol/", s.symbolHandler)
 	http.HandleFunc("/settings", s.settingsHandler)
 	log.Printf("[SERVER] Route registered: /settings -> settingsHandler")
 
+	http.HandleFunc("/schwab", s.schwabHandler)
+	log.Printf("[SERVER] Route registered: /schwab -> schwabHandler")
+
 	http.HandleFunc("/api/settings", s.settingsAPIHandler)
 	log.Printf("[SERVER] Route registered: /api/settings -> settingsAPIHandler")
 

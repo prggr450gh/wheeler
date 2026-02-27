@@ -143,11 +143,8 @@
                 </div>
             </div>
 
-            <!-- All Charts with Legend -->
-            <div style="display: flex; gap: 20px; margin-bottom: 30px;">
-                <!-- Left: All Charts (90% width) -->
-                <div style="flex: 9;">
-                    <div class="content-section" style="height: 100%;">
+            <!-- All Charts -->
+            <div class="content-section" style="margin-bottom: 30px;">
                         <div class="options-section-row" style="margin-top: 0;">
                         <!-- Puts Section -->
                         <div class="content-section">
@@ -227,18 +224,6 @@
                             </div>
                         </div>
                         </div>
-                    </div>
-                </div>
-                
-                <!-- Right: Symbol Legend (10% width) -->
-                <div style="flex: 1;">
-                    <div class="content-section" style="height: 100%;">
-                        <div class="section-title">Legend</div>
-                        <div id="symbolLegend" style="padding: 20px; display: flex; flex-direction: column; flex-wrap: wrap; gap: 8px; max-height: 700px; align-content: flex-start;">
-                            <!-- Legend will be populated by JavaScript -->
-                        </div>
-                    </div>
-                </div>
             </div>
             
             <!-- Monthly Premiums by Symbol Grouped by Open/Closed -->
@@ -320,7 +305,6 @@
         Chart.register(ChartDataLabels);
         
         // Track selected symbol for highlighting
-        let selectedSymbol = null;
         
         // Store all chart instances for updating
         const chartInstances = {
@@ -1980,106 +1964,10 @@
             });
         }
 
-        // Create unified symbol legend
-        function createSymbolLegend() {
-            const legendContainer = document.getElementById('symbolLegend');
-            if (!legendContainer) return;
-            
-            let html = '';
-            
-            allUniqueSymbols.forEach(symbol => {
-                const color = getSymbolColor(symbol, allUniqueSymbols);
-                html += `
-                    <div class="legend-item" data-symbol="${symbol}" style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 4px; border-radius: 4px; transition: background-color 0.2s;">
-                        <div style="width: 18px; height: 18px; background-color: ${color}; border: 1px solid #ccc; border-radius: 3px; flex-shrink: 0;"></div>
-                        <span style="color: #e0e0e0; font-size: 14px; font-weight: 500;">${symbol}</span>
-                    </div>
-                `;
-            });
-            
-            legendContainer.innerHTML = html;
-            
-            // Add click handlers to legend items
-            document.querySelectorAll('.legend-item').forEach(item => {
-                item.addEventListener('click', function() {
-                    const symbol = this.getAttribute('data-symbol');
-                    toggleSymbolHighlight(symbol);
-                });
-                
-                item.addEventListener('mouseenter', function() {
-                    this.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
-                });
-                
-                item.addEventListener('mouseleave', function() {
-                    this.style.backgroundColor = 'transparent';
-                });
-            });
-        }
-        
-        // Toggle symbol highlighting across all charts
-        function toggleSymbolHighlight(symbol) {
-            if (selectedSymbol === symbol) {
-                // Deselect
-                selectedSymbol = null;
-            } else {
-                // Select new symbol
-                selectedSymbol = symbol;
-            }
-            
-            // Update legend highlighting
-            document.querySelectorAll('.legend-item').forEach(item => {
-                if (item.getAttribute('data-symbol') === selectedSymbol) {
-                    item.style.backgroundColor = 'rgba(39, 174, 96, 0.3)';
-                    item.style.borderLeft = '3px solid #27ae60';
-                    item.style.paddingLeft = '8px';
-                } else {
-                    item.style.backgroundColor = 'transparent';
-                    item.style.borderLeft = 'none';
-                    item.style.paddingLeft = '4px';
-                }
-            });
-            
-            // Update all charts
-            updateChartHighlights();
-        }
-        
-        // Update all charts with highlighting
-        function updateChartHighlights() {
-            // Update pie charts
-            [chartInstances.putsTicker, chartInstances.callsTicker, 
-             chartInstances.capGainsTicker, chartInstances.dividendsTicker].forEach(chart => {
-                if (chart) {
-                    chart.data.datasets[0].borderWidth = chart.data.labels.map(label => 
-                        label === selectedSymbol ? 3 : 0.5
-                    );
-                    chart.data.datasets[0].borderColor = chart.data.labels.map(label => 
-                        label === selectedSymbol ? '#ffffff' : '#666666'
-                    );
-                    chart.update();
-                }
-            });
-            
-            // Update monthly premiums stacked bar chart
-            if (chartInstances.monthlyPremiums) {
-                chartInstances.monthlyPremiums.data.datasets.forEach(dataset => {
-                    const symbol = dataset.label.replace(' (Closed)', '').replace(' (Open)', '');
-                    if (symbol === selectedSymbol) {
-                        dataset.borderWidth = 3;
-                        dataset.borderColor = '#ffffff';
-                    } else {
-                        dataset.borderWidth = 1;
-                        dataset.borderColor = dataset.backgroundColor;
-                    }
-                });
-                chartInstances.monthlyPremiums.update();
-            }
-        }
-        
         // Create the grouped bar chart when page loads
         document.addEventListener('DOMContentLoaded', function() {
             createMonthlyPremiumsGroupedChart();
-            createSymbolLegend();
-            
+
             // Get initial values from template
             const initialFrom = '{{.SelectedFromDate}}';
             const initialTo = '{{.SelectedToDate}}';

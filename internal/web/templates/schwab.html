@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Schwab - Wheeler</title>
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body class="settings-page">
+    <div class="app-container">
+        {{template "_navigation.html" .}}
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="content-section">
+                <div class="section-title">Schwab</div>
+                <div class="section-subtitle">Configure your Charles Schwab API credentials for brokerage integration</div>
+
+                <!-- API Credentials Configuration Form -->
+                <div class="settings-form-container">
+                    <div class="settings-card">
+                        <div class="settings-card-header">
+                            <i class="fas fa-key"></i>
+                            <h3>Schwab API Configuration</h3>
+                        </div>
+                        <div class="settings-card-body">
+                            <form id="schwabCredentialsForm">
+                                <div class="form-group">
+                                    <label for="appKeyInput" class="form-label">App Key</label>
+                                    <input type="password" id="appKeyInput" class="form-input"
+                                           placeholder="Enter your Schwab App Key"
+                                           value="{{if .AppKey}}{{.AppKey}}{{end}}">
+                                    <div class="form-help">
+                                        <i class="fas fa-info-circle"></i>
+                                        Found in your app registration at <a href="https://developer.schwab.com" target="_blank" rel="noopener">developer.schwab.com</a>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="secretKeyInput" class="form-label">Secret Key</label>
+                                    <input type="password" id="secretKeyInput" class="form-input"
+                                           placeholder="Enter your Schwab Secret Key"
+                                           value="{{if .SecretKey}}{{.SecretKey}}{{end}}">
+                                    <div class="form-help">
+                                        <i class="fas fa-info-circle"></i>
+                                        The secret associated with your registered Schwab app
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <div class="form-actions">
+                                        <button type="button" class="btn btn-secondary" id="toggleAppKeyBtn">
+                                            <i class="fas fa-eye" id="appKeyEyeIcon"></i>
+                                            <span id="appKeyToggleText">Show</span>
+                                        </button>
+                                        <button type="submit" class="btn btn-primary" id="saveCredentialsBtn">
+                                            <i class="fas fa-save"></i>
+                                            Save Credentials
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+
+                            <!-- Credentials Status -->
+                            <div class="api-status" id="apiStatus">
+                                <div class="status-indicator">
+                                    <i class="fas fa-circle" id="statusIcon"></i>
+                                    <span id="statusText">Not configured</span>
+                                </div>
+                                <div class="status-description" id="statusDescription">
+                                    Configure your Schwab credentials to enable brokerage integration
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Information Section -->
+                <div class="info-section">
+                    <div class="info-card">
+                        <div class="info-header">
+                            <i class="fas fa-lightbulb"></i>
+                            <h4>About the Schwab API</h4>
+                        </div>
+                        <div class="info-content">
+                            <p>The Charles Schwab API allows Wheeler to connect directly to your brokerage account for portfolio data and trading operations.</p>
+                            <ul>
+                                <li><strong>App Key:</strong> Your application's client ID, obtained from the Schwab Developer Portal</li>
+                                <li><strong>Secret Key:</strong> Your application's client secret, kept confidential</li>
+                                <li><strong>Access:</strong> Register at <a href="https://developer.schwab.com" target="_blank" rel="noopener">developer.schwab.com</a> to create an app and obtain credentials</li>
+                            </ul>
+                            <p>Your credentials are stored locally in the Wheeler database and are never transmitted to third parties.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Include Shared Symbol Modal -->
+    {{template "_symbol_modal.html"}}
+
+    <style>
+        .settings-form-container {
+            max-width: 600px;
+            margin: 20px 0;
+        }
+
+        .settings-card {
+            background: #2d2d2d;
+            border: 1px solid #404040;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .settings-card-header {
+            padding: 20px;
+            border-bottom: 1px solid #404040;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .settings-card-header i {
+            color: #27ae60;
+            font-size: 18px;
+        }
+
+        .settings-card-header h3 {
+            margin: 0;
+            color: #e0e0e0;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .settings-card-body {
+            padding: 20px;
+        }
+
+        .form-help {
+            font-size: 12px;
+            color: #888;
+            margin-top: 5px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .form-help a {
+            color: #27ae60;
+            text-decoration: none;
+        }
+
+        .form-help a:hover {
+            text-decoration: underline;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .api-status {
+            margin-top: 20px;
+            padding: 15px;
+            background: #1e1e1e;
+            border-radius: 6px;
+            border-left: 4px solid #666;
+        }
+
+        .api-status.configured {
+            border-left-color: #27ae60;
+        }
+
+        .api-status.error {
+            border-left-color: #e74c3c;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 5px;
+        }
+
+        .status-indicator i {
+            font-size: 8px;
+        }
+
+        .status-indicator.configured i {
+            color: #27ae60;
+        }
+
+        .status-indicator.error i {
+            color: #e74c3c;
+        }
+
+        .status-indicator.not-configured i {
+            color: #666;
+        }
+
+        .status-description {
+            font-size: 12px;
+            color: #888;
+            margin-left: 16px;
+        }
+
+        .info-section {
+            max-width: 600px;
+        }
+
+        .info-card {
+            background: #2d2d2d;
+            border: 1px solid #404040;
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .info-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .info-header i {
+            color: #f39c12;
+            font-size: 16px;
+        }
+
+        .info-header h4 {
+            margin: 0;
+            color: #e0e0e0;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .info-content {
+            color: #b0b0b0;
+            line-height: 1.5;
+        }
+
+        .info-content a {
+            color: #27ae60;
+            text-decoration: none;
+        }
+
+        .info-content a:hover {
+            text-decoration: underline;
+        }
+
+        .info-content ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+
+        .info-content li {
+            margin: 5px 0;
+        }
+
+        .info-content strong {
+            color: #e0e0e0;
+        }
+    </style>
+
+    <script>
+        let currentAppKey = '{{if .AppKey}}{{.AppKey}}{{end}}';
+        let currentSecretKey = '{{if .SecretKey}}{{.SecretKey}}{{end}}';
+
+        // Toggle visibility for both fields
+        document.getElementById('toggleAppKeyBtn').addEventListener('click', function() {
+            const appKeyInput = document.getElementById('appKeyInput');
+            const secretKeyInput = document.getElementById('secretKeyInput');
+            const eyeIcon = document.getElementById('appKeyEyeIcon');
+            const toggleText = document.getElementById('appKeyToggleText');
+
+            if (appKeyInput.type === 'password') {
+                appKeyInput.type = 'text';
+                secretKeyInput.type = 'text';
+                eyeIcon.className = 'fas fa-eye-slash';
+                toggleText.textContent = 'Hide';
+            } else {
+                appKeyInput.type = 'password';
+                secretKeyInput.type = 'password';
+                eyeIcon.className = 'fas fa-eye';
+                toggleText.textContent = 'Show';
+            }
+        });
+
+        function updateApiStatus(hasCredentials) {
+            const statusIndicator = document.querySelector('.status-indicator');
+            const statusText = document.getElementById('statusText');
+            const statusDescription = document.getElementById('statusDescription');
+            const apiStatus = document.getElementById('apiStatus');
+
+            apiStatus.classList.remove('configured', 'error', 'not-configured');
+            statusIndicator.classList.remove('configured', 'error', 'not-configured');
+
+            if (!hasCredentials) {
+                apiStatus.classList.add('not-configured');
+                statusIndicator.classList.add('not-configured');
+                statusText.textContent = 'Not configured';
+                statusDescription.textContent = 'Configure your Schwab credentials to enable brokerage integration';
+            } else {
+                apiStatus.classList.add('configured');
+                statusIndicator.classList.add('configured');
+                statusText.textContent = 'Configured';
+                statusDescription.textContent = 'Schwab credentials are set';
+            }
+        }
+
+        // Form submission — saves both keys
+        document.getElementById('schwabCredentialsForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const appKey = document.getElementById('appKeyInput').value.trim();
+            const secretKey = document.getElementById('secretKeyInput').value.trim();
+            const saveBtn = document.getElementById('saveCredentialsBtn');
+
+            saveBtn.disabled = true;
+            const originalText = saveBtn.innerHTML;
+            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+
+            const saveAppKey = fetch('/api/settings/SCHWAB_APP_KEY', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    value: appKey,
+                    description: 'App Key for Charles Schwab API integration'
+                })
+            });
+
+            const saveSecretKey = fetch('/api/settings/SCHWAB_SECRET_KEY', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    value: secretKey,
+                    description: 'Secret Key for Charles Schwab API integration'
+                })
+            });
+
+            Promise.all([saveAppKey, saveSecretKey])
+                .then(responses => {
+                    const failed = responses.filter(r => !r.ok);
+                    if (failed.length > 0) {
+                        throw new Error('Failed to save one or more credentials');
+                    }
+                    currentAppKey = appKey;
+                    currentSecretKey = secretKey;
+                    updateApiStatus(appKey.length > 0 || secretKey.length > 0);
+                    showNotification('Schwab credentials saved successfully!', 'success');
+                })
+                .catch(error => {
+                    console.error('Error saving credentials:', error);
+                    showNotification('Error saving credentials: ' + error.message, 'error');
+                })
+                .finally(() => {
+                    saveBtn.disabled = false;
+                    saveBtn.innerHTML = originalText;
+                });
+        });
+
+        // Initialize status display
+        document.addEventListener('DOMContentLoaded', function() {
+            updateApiStatus(currentAppKey.length > 0 || currentSecretKey.length > 0);
+        });
+
+        function showNotification(message, type) {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.innerHTML = `
+                <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle'}"></i>
+                <span>${message}</span>
+                <button class="notification-close">&times;</button>
+            `;
+
+            document.body.appendChild(notification);
+
+            setTimeout(() => notification.classList.add('show'), 100);
+
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+
+            notification.querySelector('.notification-close').addEventListener('click', () => {
+                notification.classList.remove('show');
+                setTimeout(() => notification.remove(), 300);
+            });
+        }
+    </script>
+    <script src="/static/js/navigation.js"></script>
+    <script src="/static/js/symbol-modal.js"></script>
+</body>
+</html>
