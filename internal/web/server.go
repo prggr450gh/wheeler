@@ -308,10 +308,7 @@ func (s *Server) setupRoutes() {
 	http.HandleFunc("/metrics", s.metricsHandler)
 	log.Printf("[SERVER] Route registered: /metrics -> metricsHandler")
 
-	http.HandleFunc("/zen", s.zenHandler)
-	log.Printf("[SERVER] Route registered: /zen -> zenHandler")
-
-	http.HandleFunc("/symbol/", s.symbolHandler)
+http.HandleFunc("/symbol/", s.symbolHandler)
 	log.Printf("[SERVER] Route registered: /symbol/ -> symbolHandler")
 
 	http.HandleFunc("/api/premium-data", s.premiumDataHandler)

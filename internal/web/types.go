@@ -420,13 +420,6 @@ type BackupData struct {
 	ActivePage  string   `json:"activePage"`
 }
 
-// ZenData holds data for the zen template
-type ZenData struct {
-	AllSymbols []string `json:"allSymbols"`
-	CurrentDB  string   `json:"currentDB"`
-	ActivePage string   `json:"activePage"`
-}
-
 // DividendSymbolData holds dividend information for symbols on the dividends page
 type DividendSymbolData struct {
 	Symbol            string     `json:"symbol"`
