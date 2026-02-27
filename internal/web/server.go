@@ -27,6 +27,7 @@ type Server struct {
 	longPositionService *models.LongPositionService
 	dividendService     *models.DividendService
 	settingService      *models.SettingService
+	configService       *models.ConfigService
 	metricService       *models.MetricService
 	polygonService      *polygon.Service
 	templates           *template.Template
@@ -249,7 +250,7 @@ func NewServer() (*Server, error) {
 	// Initialize core services
 	symbolService := models.NewSymbolService(dbWrapper.DB)
 	settingService := models.NewSettingService(dbWrapper.DB)
-	
+
 	server := &Server{
 		db:                  dbWrapper.DB,
 		optionService:       models.NewOptionService(dbWrapper.DB),
@@ -258,6 +259,7 @@ func NewServer() (*Server, error) {
 		longPositionService: models.NewLongPositionService(dbWrapper.DB),
 		dividendService:     models.NewDividendService(dbWrapper.DB),
 		settingService:      settingService,
+		configService:       models.NewConfigService(dbWrapper.DB),
 		metricService:       models.NewMetricService(dbWrapper.DB),
 		polygonService:      polygon.NewService(symbolService, settingService),
 		templates:           templates,
@@ -422,6 +424,12 @@ func (s *Server) setupRoutes() {
 
 	http.HandleFunc("/api/settings", s.settingsAPIHandler)
 	log.Printf("[SERVER] Route registered: /api/settings -> settingsAPIHandler")
+
+	http.HandleFunc("/config", s.configPageHandler)
+	log.Printf("[SERVER] Route registered: /config -> configPageHandler")
+
+	http.HandleFunc("/api/config", s.configAPIHandler)
+	log.Printf("[SERVER] Route registered: /api/config -> configAPIHandler")
 
 	http.HandleFunc("/api/settings/", s.individualSettingAPIHandler)
 	log.Printf("[SERVER] Route registered: /api/settings/ -> individualSettingAPIHandler")

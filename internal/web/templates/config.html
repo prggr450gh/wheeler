@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Config - Wheeler</title>
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body class="settings-page">
+    <div class="app-container">
+        {{template "_navigation.html" .}}
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="content-section">
+                <div class="section-title">Config</div>
+                <div class="section-subtitle">Configure default values for option entry dialogs</div>
+
+                <div class="settings-form-container">
+
+                    {{range .Config}}
+                    <div class="settings-card">
+                        <div class="settings-card-header">
+                            <i class="fas fa-sliders-h"></i>
+                            <h3>{{if eq .Key "default_commission"}}Default Commission{{else if eq .Key "default_contracts"}}Default Contracts{{else}}{{.Key}}{{end}}</h3>
+                        </div>
+                        <div class="settings-card-body">
+                            {{if .Description}}
+                            <p class="config-description">{{.Description}}</p>
+                            {{end}}
+                            <div class="form-group">
+                                <label class="form-label" for="input-{{.Key}}">Value</label>
+                                <input type="text" inputmode="decimal" id="input-{{.Key}}"
+                                       class="form-input config-input"
+                                       data-key="{{.Key}}"
+                                       value="{{.Value}}">
+                            </div>
+                            <div class="form-group">
+                                <div class="form-actions">
+                                    <button type="button" class="btn btn-primary save-config-btn" data-key="{{.Key}}">
+                                        <i class="fas fa-save"></i>
+                                        Save
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {{end}}
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Include Shared Symbol Modal -->
+    {{template "_symbol_modal.html"}}
+
+    <style>
+        .settings-form-container {
+            max-width: 600px;
+            margin: 20px 0;
+        }
+
+        .settings-card {
+            background: #2d2d2d;
+            border: 1px solid #404040;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .settings-card-header {
+            padding: 20px;
+            border-bottom: 1px solid #404040;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .settings-card-header i {
+            color: #27ae60;
+            font-size: 18px;
+        }
+
+        .settings-card-header h3 {
+            margin: 0;
+            color: #e0e0e0;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .settings-card-body {
+            padding: 20px;
+        }
+
+        .config-description {
+            color: #888;
+            font-size: 13px;
+            margin: 0 0 16px 0;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+    </style>
+
+    <script>
+        document.querySelectorAll('.save-config-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                const key = this.dataset.key;
+                const input = document.getElementById('input-' + key);
+                const value = input.value.trim();
+                const originalHTML = this.innerHTML;
+
+                this.disabled = true;
+                this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+
+                fetch('/api/config', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ key: key, value: value })
+                })
+                .then(function(response) {
+                    if (!response.ok) throw new Error('Failed to save');
+                    return response.json();
+                })
+                .then(function(data) {
+                    input.value = data.value;
+                    showNotification('Saved ' + key + ' = ' + data.value, 'success');
+                })
+                .catch(function(err) {
+                    showNotification('Error saving ' + key + ': ' + err.message, 'error');
+                })
+                .finally(function() {
+                    btn.disabled = false;
+                    btn.innerHTML = originalHTML;
+                }.bind(this));
+            });
+        });
+
+        function showNotification(message, type) {
+            const notification = document.createElement('div');
+            notification.className = 'notification ' + type;
+            notification.innerHTML =
+                '<i class="fas ' + (type === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle') + '"></i>' +
+                '<span>' + message + '</span>' +
+                '<button class="notification-close">&times;</button>';
+
+            document.body.appendChild(notification);
+            setTimeout(function() { notification.classList.add('show'); }, 100);
+            setTimeout(function() {
+                notification.classList.remove('show');
+                setTimeout(function() { notification.remove(); }, 300);
+            }, 3000);
+            notification.querySelector('.notification-close').addEventListener('click', function() {
+                notification.classList.remove('show');
+                setTimeout(function() { notification.remove(); }, 300);
+            });
+        }
+    </script>
+    <script src="/static/js/navigation.js"></script>
+    <script src="/static/js/symbol-modal.js"></script>
+</body>
+</html>

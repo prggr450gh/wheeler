@@ -1435,7 +1435,8 @@
                 // Set Date Sold to today's date
                 const today = new Date().toISOString().split('T')[0];
                 document.getElementById('optionOpenedInput').value = today;
-                document.getElementById('optionCommissionInput').value = '0.65';
+                document.getElementById('optionCommissionInput').value = '{{.DefaultCommission}}';
+                document.getElementById('optionContractsInput').value = '{{.DefaultContracts}}';
                 originalOptionData = null;
             }
             

@@ -219,6 +219,8 @@ func (s *Server) symbolHandler(w http.ResponseWriter, r *http.Request) {
 		MonthlyResults:    monthlyResults,
 		CurrentDB:         s.getCurrentDatabaseName(),
 		ActivePage:        "symbol",
+		DefaultCommission: s.configService.GetValue("default_commission", "0.65"),
+		DefaultContracts:  s.configService.GetValue("default_contracts", "1"),
 	}
 
 	log.Printf("[SYMBOL] Step 11: Template data created successfully for %s", symbol)

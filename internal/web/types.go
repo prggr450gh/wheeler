@@ -279,6 +279,8 @@ type SymbolData struct {
 	MonthlyResults    []SymbolMonthlyResult  `json:"monthlyResults"`
 	CurrentDB         string                 `json:"currentDB"`
 	ActivePage        string                 `json:"activePage"`
+	DefaultCommission string                 `json:"defaultCommission"`
+	DefaultContracts  string                 `json:"defaultContracts"`
 }
 
 type OptionRequest struct {
@@ -468,6 +470,14 @@ type UpcomingDividendDate struct {
 	Dividend       float64   `json:"dividend"`
 	Shares         int       `json:"shares"`
 	ExpectedAmount float64   `json:"expectedAmount"`
+}
+
+// ConfigPageData holds data for the config admin page template
+type ConfigPageData struct {
+	AllSymbols []string               `json:"allSymbols"`
+	CurrentDB  string                 `json:"currentDB"`
+	ActivePage string                 `json:"activePage"`
+	Config     []*models.ConfigSetting `json:"config"`
 }
 
 // PageData holds common data for all page templates

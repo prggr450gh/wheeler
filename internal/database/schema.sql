@@ -78,8 +78,18 @@ CREATE TABLE IF NOT EXISTS metrics (
 );
 
 -- Insert default POLYGON_API_KEY setting
-INSERT OR IGNORE INTO settings (name, value, description) 
+INSERT OR IGNORE INTO settings (name, value, description)
 VALUES ('POLYGON_API_KEY', '', 'API key for Polygon.io stock market data integration');
+
+CREATE TABLE IF NOT EXISTS config (
+    key         TEXT PRIMARY KEY,
+    value       TEXT NOT NULL,
+    description TEXT
+);
+
+INSERT OR IGNORE INTO config (key, value, description) VALUES
+    ('default_commission', '0.65', 'Default commission for new option positions'),
+    ('default_contracts',  '1',    'Default number of contracts for new options');
 
 -- Indexes for performance
 -- Note: Primary key columns automatically have indexes, so we don't need explicit indexes for:
